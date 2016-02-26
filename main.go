@@ -17,7 +17,6 @@ var args struct {
 	Help           bool   `short:"h" long:"help" descrition:"the help message"`
 }
 
-var usage string
 var parser *flags.Parser
 
 func parseArgs(args interface{}) (e error) {
@@ -35,7 +34,7 @@ func printUsage() {
 
 func init() {
 	parser = flags.NewParser(&args, flags.None)
-	usage = parser.Usage
+	parser.Usage = "tcp-proxy -p port -r host:port [other opts]"
 }
 
 func printError(format string, a ...interface{}) {
