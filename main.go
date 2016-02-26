@@ -5,72 +5,96 @@ import (
 	"fmt"
 	"os"
 	"io"
-	"strconv"
-	"strings"
 	_ "net/http/pprof"
-	"log"
 	"net/http"
+	"github.com/jessevdk/go-flags"
 )
 
-var args struct{
-	
+var args struct {
+	LocalPort      int `short:"p" long:"port" description:"localhost listen port"`
+	RemoteHostPort string `short:"r" long:"remote" description:"remote ip:port"`
+	DebugPort      int `short:"d" long:"debug" description:"debug port" default:"6060"`
+	Help           bool `short:"h" long:"help" descrition:"the help message"`
 }
+
+var usage string
+var parser *flags.Parser
+
+func parseArgs(args interface{}) (e error) {
+	_, err := parser.ParseArgs(os.Args)
+
+	if err != nil {
+		e = err
+	}
+	return
+}
+
+func printUsage() {
+	parser.WriteHelp(os.Stderr)
+}
+
+func init() {
+	parser = flags.NewParser(&args, flags.None)
+	usage = parser.Usage
+}
+
+func printError(format string, a ...interface{}) {
+	fmt.Fprintf(os.Stderr, format, a...)
+	fmt.Printf("\n")
+}
+
 func main() {
 
+	var err error
+	err = parseArgs(&args)
+
+	if err != nil {
+		printUsage()
+	}
+
 	go func() {
-		log.Println(http.ListenAndServe("localhost:6060", nil))
+		err := http.ListenAndServe(fmt.Sprintf(":%d", args.DebugPort), nil)
+		if err != nil {
+			printError(err.Error())
+			printUsage()
+			os.Exit(1)
+		}
 	}()
 
-	target := "127.0.0.1:8080"
-
-	ipPort := strings.Split(target, ":")
-	if len(ipPort) != 2 {
-		fmt.Errorf("ip port not valid:%s", target)
-		os.Exit(1)
-	}
-
-	targetPort, err := strconv.Atoi(ipPort[1])
-
+	localBinding := fmt.Sprintf(":%d", args.LocalPort)
+	listener, err := net.Listen("tcp", localBinding)
 	if err != nil {
-		fmt.Errorf("port not valid:%s", ipPort[1])
-	}
-
-	targetIp := net.ParseIP(ipPort[0])
-
-	listener, err := net.Listen("tcp", ":5000")
-	if err != nil {
-		fmt.Errorf(err.Error())
-		os.Exit(1)
+		printError(err.Error())
+		printUsage()
+		return
 	}
 
 	for {
 		conn, err := listener.Accept()
 
 		if err != nil {
-			fmt.Errorf(err.Error())
+			printError(err.Error())
 		}
 
-		go proxyConn(conn, targetIp, targetPort)
+		go proxyConn(conn, args.RemoteHostPort)
 	}
 }
 
-func proxyConn(cliConn net.Conn, ip net.IP, port int) {
-	serConn, err := net.Dial("tcp", ":8080")
+func proxyConn(cliConn net.Conn, addr string) {
+	serConn, err := net.Dial("tcp", addr)
 	if err != nil {
-		fmt.Errorf(err.Error())
+		printError(err.Error())
 		cliConn.Write([]byte(err.Error()))
 	}
 
 	finished := make(chan bool)
 	go func(ch chan bool) {
 		copyBuffer(cliConn, serConn, nil)
-		fmt.Println("request finished.")
 		ch <- true
 	}(finished)
 
 	go func(ch chan bool) {
 		copyBuffer(serConn, cliConn, nil)
-		fmt.Println("response finished.")
 		ch <- true
 	}(finished)
 
@@ -86,11 +110,9 @@ func copyBuffer(dst io.Writer, src io.Reader, buf []byte) (written int64, err er
 	}
 	for {
 		nr, er := src.Read(buf)
-		fmt.Println("read:", nr)
 		if nr > 0 {
 			nw, ew := dst.Write(buf[0:nr])
 			if nw > 0 {
-				fmt.Println(nw)
 				written += int64(nw)
 			}
 			if ew != nil {
