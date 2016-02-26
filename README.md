@@ -16,6 +16,9 @@ the process is like the following
 	request -> proxy(ip:port) -> realServer(ip:port)
 	client <- proxy(ip:port) <- response
 
+## requirements
+
+- [golang](http://golang.org) 1.5+
 
 ## build
 
