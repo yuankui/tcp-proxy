@@ -11,8 +11,8 @@ import (
 )
 
 var args struct {
-	LocalPort      int `short:"p" long:"port" description:"localhost listen port"`
-	RemoteHostPort string `short:"r" long:"remote" description:"remote ip:port"`
+	LocalPort      int `short:"p" long:"port" description:"localhost listen port" required:"true"`
+	RemoteHostPort string `short:"r" long:"remote" description:"remote ip:port" required:"true"`
 	DebugPort      int `short:"d" long:"debug" description:"debug port" default:"6060"`
 	Help           bool `short:"h" long:"help" descrition:"the help message"`
 }
@@ -50,6 +50,7 @@ func main() {
 
 	if err != nil {
 		printUsage()
+		return
 	}
 
 	go func() {
