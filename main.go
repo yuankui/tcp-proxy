@@ -1,20 +1,20 @@
 package main
 
 import (
-	"net"
 	"fmt"
-	"os"
-	"io"
-	_ "net/http/pprof"
-	"net/http"
 	"github.com/jessevdk/go-flags"
+	"io"
+	"net"
+	"net/http"
+	_ "net/http/pprof"
+	"os"
 )
 
 var args struct {
-	LocalPort      int `short:"p" long:"port" description:"localhost listen port" required:"true"`
+	LocalPort      int    `short:"p" long:"port" description:"localhost listen port" required:"true"`
 	RemoteHostPort string `short:"r" long:"remote" description:"remote ip:port" required:"true"`
-	DebugPort      int `short:"d" long:"debug" description:"debug port" default:"6060"`
-	Help           bool `short:"h" long:"help" descrition:"the help message"`
+	DebugPort      int    `short:"d" long:"debug" description:"debug port" default:"6060"`
+	Help           bool   `short:"h" long:"help" descrition:"the help message"`
 }
 
 var usage string
@@ -107,7 +107,7 @@ func proxyConn(cliConn net.Conn, addr string) {
 
 func copyBuffer(dst io.Writer, src io.Reader, buf []byte) (written int64, err error) {
 	if buf == nil {
-		buf = make([]byte, 32 * 1024)
+		buf = make([]byte, 32*1024)
 	}
 	for {
 		nr, er := src.Read(buf)
@@ -135,5 +135,3 @@ func copyBuffer(dst io.Writer, src io.Reader, buf []byte) (written int64, err er
 	}
 	return written, err
 }
-
-
