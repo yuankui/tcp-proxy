@@ -22,6 +22,7 @@ the process is like the following
 
 ## build
 
+	go get github.com/yuankui/tcp-proxy
 	go build .
 
 ## usage:
